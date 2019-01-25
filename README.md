@@ -21,7 +21,7 @@ Since this is the real world, there are some edge cases we need for you to accou
 3. "Aged Brie" actually increases in Quality the older it gets
 4. The Quality of an item is never more than 50
 5. "Sulfuras", being a legendary item, never has to be sold or decreases in Quality
-6. "Backstage passes", like aged brie, increases in Quality as it's SellIn value approaches; 
+6. "Backstage passes", increases in Quality as it's SellIn value approaches; 
   Quality increases by 2 when there are 10 days or less and by 3 when there are 5 days or less but Quality drops to 0 after the concert
 7. "Conjured" items degrade in Quality twice as fast as normal items
 8. An item can never have its Quality increase above 50, however "Sulfuras" is a legendary item and as such its Quality is 80 and it never alters.

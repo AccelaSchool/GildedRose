@@ -1,7 +1,7 @@
 // Allison's verbal responses
 
-const introduction = "Hi and welcome to the Gilded Rose. Welcome to our small inn within our prominent city.  " +
-   "I am Allison. We buy and sell only the finest goods."
+const introduction = "Hi and welcome to the Gilded Rose. Welcome to our small inn within our prominent city.  " + '\n' +
+   "I am Allison. We buy and sell only the finest goods." + '\n';
 
 // 15 gossip drama sayings 
 const drama = [ "Beware of Leeroy Jenkins.  He isn't a team player",
@@ -15,10 +15,11 @@ const drama = [ "Beware of Leeroy Jenkins.  He isn't a team player",
    "I heard to create Gothrog's ooze monster he pulls the essence of life from a gaint acidic toad tadpole and puts it in an oozing soul stone",
    "I heard that Gothrog's ooze monsters are spell summoned into battles",
    "I heard the dark shogans and ether demegorgons are hunting Gothrog for his inifinty kane spear, the spear is a jeweled relic from the civilation before the demon wars",
-   "The only reason Gothrog's healing portions are even around is because he left 100s chests full of them on the during the last battle of the Rose War",
-   "The different kingdoms, guilds, mercs and heros took those chests after the last Rose War battle",
-   "No one has seen Gothrog since the last Rose battle.  Probably better that way has he is cheered by many, but hated just as much.",
-   "I'm only a 1377 years old elf, a little flightly and I care to gossip about what I want" ]
+   "The only reason Gothrog's healing potions are even around is because he left 100s chests full of them on the during the last battle of the Rose War",
+   "The different kingdoms, guilds, mercs and heros took Gothrog's health potion chests during the last battle of the Rose War",
+   "No one has seen Gothrog since the last Rose battle.  Probably better that way as he is cheered by many, but hated by just as much.",
+   "I'm only a 1377 years old elf, a little flightly and I care to gossip about what I want",
+   "Sulfuras was assassinated by the dark shogans through a trap planned out by the demegorgons"   ]
 
 const instructions = "Type the number of the following option";
 
@@ -27,11 +28,12 @@ const menu = [ "0. Tell me some local gossip",
 	"2. Ask for the details of a single item by name",
 	"3. Progress to the next day",
 	"4. List of trash we should throw away (Quality = 0)",
-	"5. Buy",
-	"6. Sell",
-   "7. Stop going to the store(end program)" ]
+	"5. Patron Buys",
+	"6. Patron Sells",
+    "7. Restart inventory (From orginal)",
+    "8. Stop going to the store(end program)" ]
 
-const seeYouTomorrow = "I'll see you tomorrow"; 
+const seeYouTomorrow = "I'll see you tomorrow" + '\n' + '\n'; 
 
 function randomIntFromInterval(min,max) { // min and max included
     return Math.floor(Math.random()*(max-min+1)+min);
@@ -42,53 +44,66 @@ exports.getIntroduction = function()  {
 }
 
 exports.getRandomGossip = function()  {
-   const randomSelection = randomIntFromInterval(0,drama.length);
+   var randomSelection = randomIntFromInterval(0,drama.length-1);
    return (drama[randomSelection]);
 }
 
 exports.displayMenuOptions = function()  {
-   var retVal = instructions + 'n';
+   var retVal = instructions + '\n';
    for ( var index = 0; index < menu.length; index++ ) {
-      retVal =  retVal + '\n';
+      retVal =  retVal + menu[index] + '\n';
    }
-   retVal = retVal + seeYouTomorrow;
+   retVal =  retVal + '\n';
    return (retVal);
 }
 
+exports.displayShowInfo = function()  {
+   var retVal = "Enter in the exact item name to see:  ";
+   return (retVal);
+}
 
-exports.displayBuyInfo = function()  {
+exports.displayStoreBuysInfo = function()  {
    var retVal = "In csv form enter the item name, category, selling time (integer), quality(integer)" + '\n' +
-      "(example: Roast Rat Burgers,Food,7,14);
+      "(example: Roast Rat Burgers,Food,7,14):  ";
    return (retVal);
 }
 
-exports.displaySellInfo = function()  {
-   var retVal = "Enter in the exact item name to purchase";
+exports.displayStoreSellsInfo = function()  {
+   var retVal = "Enter in the exact item name to purchase:  ";
    return (retVal);
 }
 
-exports.boughtGoodDisplayMenuOptions = function()  {
-   var retVal = "You bought the item." + '\n' + instructions + 'n';
+exports.patronBoughtDisplayMenuOptions = function(line)  {
+   var retVal = "Patron, you bought the item:  " + line + '\n' + '\n' + instructions + 'n';
    for ( var index = 0; index < menu.length; index++ ) {
-      retVal =  retVal + '\n';
+      retVal =  retVal + menu[index] + '\n';
    }
    retVal = retVal + seeYouTomorrow;
    return (retVal);
 }
 
-exports.soldGoodDisplayMenuOptions = function()  {
-   var retVal = "You sold the item." + '\n' + instructions + 'n';
+exports.patronSoldDisplayMenuOptions = function(line)  {
+   var retVal = "Patron, you sold the item:  " + line + '\n' + '\n' + instructions + 'n';
    for ( var index = 0; index < menu.length; index++ ) {
-      retVal =  retVal + '\n';
+      retVal =  retVal + menu[index] + '\n';
    }
    retVal = retVal + seeYouTomorrow;
+   return (retVal);
+}
+
+
+exports.warningDisplayMenuOptions = function()  {
+   var retVal = "You didn't select a menu item." + '\n' + '\n' + instructions + 'n';
+   for ( var index = 0; index < menu.length; index++ ) {
+      retVal =  retVal + menu[index] + '\n';
+   }
    return (retVal);
 }
 
 exports.errorDisplayMenuOptions = function()  {
-   var retVal = "That didn't work try again." + '\n' + instructions + 'n';
+   var retVal = "That didn't work try again." + '\n' + '\n' + instructions + 'n';
    for ( var index = 0; index < menu.length; index++ ) {
-      retVal =  retVal + '\n';
+      retVal =  retVal + menu[index] + '\n';
    }
    return (retVal);
 }

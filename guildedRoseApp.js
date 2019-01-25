@@ -1,16 +1,20 @@
-let ChatResponse = require('incldes/ChatResponse.js');
-let InventoryManager = require('incldes/InventoryManager.js');
+var ChatResponse = require('./includes/ChatResponse.js');
+let InventoryManager = require('./includes/InventoryManager.js');
 
 let readline = require('readline');
 
 let promtpOutput = "";
-let buy = false;
-let sell = false;
+let patronbuy = false;
+let patronsell = false;
+let showitem = false;
+
+// Pull in the Inventory at startup
+InventoryManager.uploadInventory();
 
 // Create a menu prompy to interact with
 let rl = readline.createInterface(process.stdin, process.stdout);
 
-promtpOutput = ChatResponse.getIntroduction + '\n' + ChatResponse.displayMenuOptions();
+promtpOutput = ChatResponse.getIntroduction() + '\n' + ChatResponse.displayMenuOptions();
 rl.setPrompt(promtpOutput);
 rl.prompt();
 
@@ -28,15 +32,16 @@ const menu = [ "0. Tell me some local gossip",
 rl.on('line', function(line) {
    if (line === "0" ) { 
       // Get local drama
-      promtpOutput = ChatResponse.getRandomGossip();
+      promtpOutput = ChatResponse.getRandomGossip() + '\n' + '\n' + ChatResponse.displayMenuOptions();
    }
    else if ( line === "1" ) {
       // 1. Ask for the entire list of inventory
-      promtpOutput = InventoryManager.showInventory();
+      promtpOutput = InventoryManager.showInventory() + '\n' + '\n' + ChatResponse.displayMenuOptions();
    }
    else if ( line === "2" ) {
       // 2. Ask for the details of a single item by name
-      promtpOutput = InventoryManager.getRandomGossip();
+	  showitem = true;
+	  promtpOutput = ChatResponse.displayShowInfo();
    }
    else if ( line === "3" ) {
       // 3. Progress to the next day
@@ -45,17 +50,17 @@ rl.on('line', function(line) {
    }
    else if ( line === "4" ) {
       // 4. List of trash we should throw away (Quality = 0)
-      promtpOutput = InventoryManager.showTrashInventory();
+      promtpOutput = InventoryManager.showTrashInventory() + '\n' + '\n' +  ChatResponse.displayMenuOptions();
    }
    else if ( line === "5" ) {
-      // 5. Buy"
-      buy = true;
-      promtpOutput = ChatResponse.displayBuyInfo();
+      // 5. Patron Buy"
+      patronbuy = true;
+      promtpOutput = ChatResponse.displayStoreSellsInfo();
    }
    else if ( line === "6" ) {
-      // 6 Sell
-      sell = true;
-      promtpOutput = ChatResponse.displaySellInfo();
+      // 6 Patron Sell
+      patronsell = true;
+      promtpOutput = ChatResponse.displayStoreBuysInfo();
    }
    else if ( line === "7" ) {
       // 7. Restart program
@@ -68,23 +73,27 @@ rl.on('line', function(line) {
       InventoryManager.packUpInventory();
       rl.close();
    }
-   else if (buy) {
-      if (InventoryManager.buy(line)) {
-         promtpOutput = ChatResponse.boughtGoodDisplayMenuOptions();
+   else if (showitem) {
+      promtpOutput = InventoryManager.showItem(line) + '\n' + '\n' +  ChatResponse.displayMenuOptions();
+      showitem =  false;
+   }   
+   else if (patronbuy) {
+      if (InventoryManager.removeItem(line)) {
+         promtpOutput = ChatResponse.patronBoughtDisplayMenuOptions(line);
+      }
+      else {
+         promtpOutput = ChatResponse.errorDisplayMenuOptions();
+      }
+      patronbuy =  false;
+   }
+   else if (patronsell) {
+      if (InventoryManager.addItem(line)) {
+         promtpOutput = ChatResponse.patronSoldDisplayMenuOptions(line) ;
        }
       else {
          promtpOutput = ChatResponse.errorDisplayMenuOptions();
       }
-      buy =  false;
-   }
-   else if (sell) {
-      if (InventoryManager.sell(line)) {
-         promtpOutput = ChatResponse.soldGoodDisplayMenuOptions();
-      }
-      else {
-         promtpOutput = ChatResponse.errorDisplayMenuOptions();
-      }
-      sell =  false;
+      patronsell =  false;
    }
    else {
       promtpOutput = ChatResponse.warningDisplayMenuOptions();

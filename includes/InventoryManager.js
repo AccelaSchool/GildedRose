@@ -4,6 +4,7 @@ var fs = require('fs');
 const inventoryfileorg = "inventory-org.csv";
 const inventoryfile = "inventory.csv";
 var csvoptions = {
+	headers : "ItemName,ItemCategory,Sellin,Quality",
     delimiter : ',' , // optional
     quote     : '"' // optional
 };
@@ -26,15 +27,29 @@ exports.uploadInventory = function()  {
    // Convert CSV to JSON object
    const inventory_file_data = fs.readFileSync(inventoryfile, { encoding : 'utf8'});
    inventory = csvjson.toObject(inventory_file_data, csvoptions);
-   console.log("inventory=", inventory);
+   //console.log("inventory=", inventory);
 }
 
 // Shows the inventory
 exports.showInventory = function()  {
    var strInventory = JSON.stringify(inventory, null, 2);
-   console.log("strInventory=", strInventory);
+   //console.log("strInventory=", strInventory);
    strInventory = strInventory + '\n';
    return (strInventory);
+}
+
+// Shows the inventory
+exports.showItem = function(line)  {
+	var retVal = "I couldn't find the item:  " + line;
+	var stopFlag = false;
+	for ( var inc = 0; inc < inventory.length && !stopFlag; inc++ ) {
+		//console.log("inventory[inc].ItemName=", inventory[inc].ItemName);
+		if ( inventory[inc].ItemName === line ) {
+			retVal = JSON.stringify(inventory[inc], null, 2) + '\n';
+			stopFlag = true;
+		}
+	}
+   return (retVal);
 }
 
 // Increment day and affect inventory
@@ -47,16 +62,19 @@ exports.showInventory = function()  {
 //3. "Aged Brie" actually increases in Quality the older it gets
 //4. The Quality of an item is never more than 50
 //5. "Sulfuras", being a legendary item, never has to be sold or decreases in Quality
-//6. "Backstage passes", like aged brie, increases in Quality as it's SellIn value approaches; 
+//6. "Backstage passes", increases in Quality as it's SellIn value approaches; 
 //  Quality increases by 2 when there are 10 days or less and by 3 when there are 5 days or less but Quality drops to 0 after the concert
 //7. "Conjured" items degrade in Quality twice as fast as normal items
 //8. An item can never have its Quality increase above 50, however "Sulfuras" is a legendary item and as such its Quality is 80 and it never alters.
 exports.incrementDay = function()  {
    for ( var index = 0; index < inventory.length; index++ ) {
-      if ( "Sulfuras" === inventory[index].ItemName ) {
+      if ( "Aged Brie" === inventory[index].ItemName && inventory[index].Quality < 50 && inventory[index].Sellin > 0 ) {
+         inventory[index].Quality++;
+      }
+      else if ( "Sulfuras" === inventory[index].ItemCategory || "Gothrog" === inventory[index].ItemCategory ) {
          inventory[index].Quality = 80;
       }
-      else if ( "Backstage passes" === inventory[index].ItemCategory ) {
+      else if ( "Backstage Passes" === inventory[index].ItemCategory ) {
 
          if ( inventory[index].Sellin === 0 ) {
             inventory[index].Quality = 0;
@@ -67,7 +85,7 @@ exports.incrementDay = function()  {
                inventory[index].Quality++;
                inventory[index].Quality++;
             }
-            if ( inventory[index].Sellin <= 10 && 
+            else if ( inventory[index].Sellin <= 10 && 
                inventory[index].Quality < 49 ) {
                inventory[index].Quality++;
             }
@@ -78,15 +96,17 @@ exports.incrementDay = function()  {
          inventory[index].Quality = inventory[index].Quality  - 2;
       }
       else {
-         if (inventory[index].quality > 0 && inventory[index].Sellin === 0) {
-            inventory[index].quality = inventory[index].quality - 2;
+         if (inventory[index].Quality > 0 && inventory[index].Sellin === 0 ) {
+            inventory[index].Quality = inventory[index].Quality - 2;
          }
-         else if (inventory[index].quality > 0 ) {
-            inventory[index].quality--;
+         else if (inventory[index].Quality > 0 ) {
+            inventory[index].Quality--;
          }
+		 
       }
    
-      if (inventory[index].Sellin > 0 && "Sulfuras" != inventory[index].ItemName ) {
+      if (inventory[index].Sellin > 0 && 
+	     !( "Sulfuras" === inventory[index].ItemCategory || "Gothrog" === inventory[index].ItemCategory)) {
          inventory[index].Sellin--;
       }
 
@@ -97,20 +117,20 @@ exports.incrementDay = function()  {
 }
 
 // Add Item to the inventory
-exports.buy = function(line)  {
+exports.addItem = function(line)  {
    var retVal = false;
    try {
-      var purchasedItem = csvjson.toArray(line, csvoptions);
+      var purchasedItem = csvjson.toObject(line, csvoptions); 
+	  //console.log("purchasedItem=", purchasedItem);
       var strTemplateInventory = JSON.stringify(templateItemObject, null, 2);
       var templateInventory = JSON.parse(strTemplateInventory);
-      templateInventory.ItemName = purchasedItem[0];
-      templateInventory.ItemCategory = purchasedItem[1];
-      templateInventory.Sellin = parseInt(purchasedItem[2]);
-      templateInventory.Quality = parseInt(purchasedItem[3]);
-      console.log("templateInventory=", templateInventory);
+      templateInventory.ItemName = purchasedItem[0].ItemName;
+      templateInventory.ItemCategory = purchasedItem[0].ItemCategory;
+      templateInventory.Sellin = parseInt(purchasedItem[0].Sellin);
+      templateInventory.Quality = parseInt(purchasedItem[0].Quality);
+      //console.log("templateInventory=", templateInventory);
 
       inventory[inventory.length] = templateInventory;
-      console.log("inventory item=", inventory[inventory.length - 1]);  
       retVal = true;
    }
    catch (err) {
@@ -121,18 +141,13 @@ exports.buy = function(line)  {
 }
 
 // Remove Item from the inventory
-exports.sell = function(line)  {
+exports.removeItem = function(line)  {
    var retVal = false;
-   try {
-      var index = array.indexOf(line);
-      if (index > -1) {
+   for ( var index = 0; index < inventory.length && !retVal; index++ ) {
+      if ( line === inventory[index].ItemName ) {
          inventory.splice(index, 1);
          retVal = true;
-      }  	
-   }
-   catch (err) {
-      console.log("Item most likely not sold - Error:", err);   
-      console.log("Error: line input not a CSV format=", line);   
+      }
    }
    return (retVal);
 }
@@ -141,15 +156,15 @@ exports.sell = function(line)  {
 exports.showTrashInventory = function()  {
    // Compute a bad list.
    var trashItems = [];
-   const incTrack = 0;
-   for ( int inc = 0; inc < inventory.length; inc++ ) {
+   var incTrack = 0;
+   for ( var inc = 0; inc < inventory.length; inc++ ) {
       if ( inventory[inc].Quality === 0 ) {
          trashItems[incTrack] = inventory[inc];
          incTrack++;
       }
    }
    var strInventory = JSON.stringify(trashItems, null, 2);
-   console.log("strInventory=", strInventory);
+   //console.log("strInventory=", strInventory);
    return (strInventory);
 }
 
@@ -166,11 +181,16 @@ exports.restartInventory = function()  {
 
 // Loads the inventory at startup
 exports.packUpInventory = function()  {
-   // Convert JSON to CSV object
-   var inventory_file_data = csvjson.toCSV(inventory, csvoptions);
+   // Convert JSON to CSV string
+   //"ItemName" : "", "ItemCategory" : "", "Sellin" : 0, "Quality" 
+   let inventory_file_data = "";
+   for (var index = 0; index < inventory.length; index++ ) {
+	   inventory_file_data = inventory_file_data + inventory[index].ItemName + "," + 
+	      inventory[index].ItemCategory + "," + inventory[index].Sellin + "," +  inventory[index].Quality + '\n'; 
+   }
    console.log("inventory_file_data=", inventory_file_data);
 
-   fs.writeFile(inventoryfile, inventory_file_data, function(err) {
+   fs.writeFileSync(inventoryfile, inventory_file_data, 'utf8', function(err) {
        if(err) {
            return console.log(err);
        }
